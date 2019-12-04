@@ -1,46 +1,28 @@
-import pandas as pd
-import json
-import numpy as np
-import os
-import time
-import sentencepiece as spm
-import matplotlib.pyplot as plt
-import pickle
-from pathlib import Path
-
 from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.utils import shuffle
-from sklearn.utils import check_random_state
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.svm import SVC
-from sklearn.linear_model import LogisticRegression
-from sklearn.naive_bayes import MultinomialNB
-from sklearn import metrics
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.model_selection import train_test_split
-
-
 from sklearn.datasets import load_breast_cancer
 
 from acquisition_functions import RandomSelection, EntropySelection
 from models import NBClassifier
+from al_cycle import experiment
+
 # load data
 toy_data = load_breast_cancer()
 X = toy_data['data']
 y = toy_data['target']
 
+X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, shuffle=True, test_size=0.1, random_state=123)
+
+
 # SETTINGS for AL experiment:
 
 # list with different settings for k (sample size):
-Ks = [100]
+Ks = [10]
 
 # the number of times you want to repeat the experiment:
 repeats = 1
 
 # the warm start sample size:
-start_sample_sizes = 25
+start_sample_sizes = 10
 
 # the different models to use (as defined in models.py):
 models = [
@@ -58,39 +40,24 @@ selection_functions_str = [
                         "RandomSelection"
                        ]
 
-trainset_size = len(X)
+trainset_size = len(X_train_full)
 max_queried = trainset_size - Ks[-1]
 
-d = {}
-stopped_at = - 1
+d = {} # empty dict to put the results in
+stopped_at = - 1 # parameter which can be used to complete an unfinished experiment
 
-# # load MISP data
-# csv_dir = '/content/drive/My Drive/UvA/master/Thesis/AL/MISP_train_Data.csv'
-# MISP_data = pd.read_csv(csv_dir, encoding="utf-8")
-#
-# raw_X = list(MISP_data["sentence"])
-# y = list(MISP_data["label"])
-#
-# # now add iACE data
-# json_dir = "/content/drive/My Drive/UvA/master/Thesis/AL/sentence_labels_30-4.json"
-# with open(json_dir) as f:
-#     iACE_label_dict = json.load(f)
-#
-# json_dir = "/content/drive/My Drive/UvA/master/Thesis/AL/ioc_blog_sentences.json"
-# with open(json_dir) as f:
-#     iACE_sentence_dict = json.load(f)
-#
-# iACE_sentence_to_doc = {}
-# for doc in iACE_sentence_dict:
-#     for sentence in iACE_sentence_dict[doc]:
-#         iACE_sentence_to_doc[sentence] = doc
-#
-# # create feature and label vectors
-# for i in iACE_label_dict["IOC"]:
-#     text = iACE_sentence_dict[iACE_sentence_to_doc[i]][i]
-#     raw_X.append(text)
-#     y.append(1)
-# for i in iACE_label_dict["non_IOC"][:int(float(len(iACE_label_dict["IOC"]) * 2.3))]:
-#     text = iACE_sentence_dict[iACE_sentence_to_doc[i]][i]
-#     raw_X.append(text)
-#     y.append(0)
+# run the experiment
+d = experiment(X_train_full,
+               y_train_full,
+               X_test,
+               y_test,
+               d,
+               models,
+               selection_functions,
+               Ks,
+               start_sample_sizes,
+               repeats,
+               max_queried,
+               stopped_at + 1)
+
+print(d)

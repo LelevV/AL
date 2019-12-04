@@ -1,3 +1,6 @@
+import numpy as np
+from sklearn.utils import check_random_state
+
 class RandomSelection(object):
 
     def select(probas_val, query_size):

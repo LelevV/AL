@@ -1,3 +1,5 @@
+from sklearn.naive_bayes import MultinomialNB
+
 class NBClassifier(object):
 
     model_type = 'Naive Bayes Classifier'
